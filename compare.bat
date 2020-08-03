@@ -1,0 +1,2 @@
+java -jar target/pdfMerge-0.0.1-SNAPSHOT.jar --source.folder=c:\\Projects\\Workspace --target.filepath=pdfbox.pdf --chunk.size=200  --merge.library=pdfbox 
+java -jar target/pdfMerge-0.0.1-SNAPSHOT.jar --source.folder=c:\\Projects\\Workspace --target.filepath=itext.pdf --chunk.size=200 --merge.library=itext 

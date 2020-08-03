@@ -50,10 +50,10 @@ public class PdfFileMergeApplication implements ApplicationRunner {
             // we have atleast two files
             if (files.length > 1) {
                 int n = 0;
-
                 pdfMergeUtil.reset();
-
+                System.out.format("Processing %d files...", files.length);
                 // PDFMergerUtility PDFmerger = new PDFMergerUtility();
+                Long start = System.currentTimeMillis();
                 for (int i = 0; i < files.length; i++, n++) {
                     // form the fully qualified source file path
                     // File file = new File(src + "\\" + files[i].getName());
@@ -78,13 +78,17 @@ public class PdfFileMergeApplication implements ApplicationRunner {
                         performGC();
                     }
                 }
+                Long end = System.currentTimeMillis();
+                System.out.format("Chunk size %d, in %.2f secs.\n", chunkSize, (double) (end - start) / 1000);
+
             }
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
         if (outputFiles > 1) {
+            chunkSize = tuneChunkSize(chunkSize);
             retFileName = processFolder(workFolder, dest, pref + TEMP_FILE_PREFIX, pref + ".*\\.pdf",
-                    chunkSize < 10 ? 10 : Math.round(chunkSize * .75), workFolder);
+                    chunkSize, workFolder);
         } else {
             File f = new File(retFileName);
             File t = new File(dest);
@@ -96,6 +100,12 @@ public class PdfFileMergeApplication implements ApplicationRunner {
         }
 
         return retFileName;
+    }
+
+    private static Long tuneChunkSize(Long chunkSize) {
+        chunkSize = chunkSize < 2 ? 2 : Math.round(chunkSize * .75);
+        chunkSize = chunkSize < 2 ? 2 : chunkSize;
+        return chunkSize;
     }
 
     private static void performGC() {
@@ -133,22 +143,24 @@ public class PdfFileMergeApplication implements ApplicationRunner {
         if (args.containsOption("merge.library") && args.containsOption("source.folder")
                 && args.containsOption("target.filepath") && args.containsOption("chunk.size")) {
             String workFolder = PdfFileMergeApplication.getWorkFolder(args.getOptionValues("source.folder").get(0));
-            Long start = System.currentTimeMillis();
             if (mergeLib.get(0).toLowerCase().equals("itext")) {
                 pdfMergeUtil = new ITextMerge();
             } else {
                 pdfMergeUtil = new PdfboxMerge();
             }
+            Long chunkSize = Long.parseLong(args.getOptionValues("chunk.size").get(0));
+
             // process pdf files in the specified source folder
+            Long start = System.currentTimeMillis();
             processFolder(args.getOptionValues("source.folder").get(0), args.getOptionValues("target.filepath").get(0),
-                    TEMP_FILE_PREFIX, ".*\\.pdf", Long.parseLong(args.getOptionValues("chunk.size").get(0)),
+                    TEMP_FILE_PREFIX, ".*\\.pdf", chunkSize,
                     workFolder);
             Long end = System.currentTimeMillis();
-            System.out.format("Time taken - %.2f seconds using %s\n", (double) (end - start) / 1000,mergeLib.get(0));
+            System.out.format("\nTime taken - %.2f secs. using %s\n", (double) (end - start) / 1000,mergeLib.get(0));
 
         }
         else{
-            System.out.format("all 4 arguments are required --merge.library=<itext|pdfbox> --source.folder=c:\\Projects\\Workspace --target.filepath=c:\\Projects\\Workspace\\outputfile.pdf --chunk.size=5");
+            System.out.format("\nAll 4 arguments are required --merge.library=<itext|pdfbox> --source.folder=c:\\Projects\\Workspace --target.filepath=c:\\Projects\\Workspace\\outputfile.pdf --chunk.size=5");
         }
     }
 }
