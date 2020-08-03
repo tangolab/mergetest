@@ -1,4 +1,4 @@
-package com.spring.pdfbox;
+package com.spring.pdfmerge;
 
 import java.io.File;
 import java.io.FilenameFilter;
